@@ -34,7 +34,6 @@
   a{color:inherit;text-decoration:none;}
   ::selection{background:var(--signal);color:#04140f;}
 
-  /* Faint scan-grid backdrop */
   body::before{
     content:'';
     position:fixed;inset:0;
@@ -47,7 +46,40 @@
     z-index:0;
   }
 
+  /* subtle roaming glow */
+  .glow-orb{
+    position:fixed;width:520px;height:520px;border-radius:50%;
+    background:radial-gradient(circle, rgba(0,232,160,.10), transparent 70%);
+    top:-160px;right:-160px;pointer-events:none;z-index:0;
+    animation:drift 18s ease-in-out infinite;
+  }
+  .glow-orb-2{
+    position:fixed;width:420px;height:420px;border-radius:50%;
+    background:radial-gradient(circle, rgba(255,122,89,.06), transparent 70%);
+    bottom:-140px;left:-120px;pointer-events:none;z-index:0;
+    animation:drift2 22s ease-in-out infinite;
+  }
+  @keyframes drift{
+    0%,100%{transform:translate(0,0);}
+    50%{transform:translate(-60px,80px);}
+  }
+  @keyframes drift2{
+    0%,100%{transform:translate(0,0);}
+    50%{transform:translate(50px,-70px);}
+  }
+  #netCanvas{
+    position:fixed;inset:0;width:100%;height:100%;
+    pointer-events:none;z-index:0;opacity:.35;
+  }
+
   .wrap{max-width:1080px;margin:0 auto;padding:0 32px;}
+
+  /* progress bar */
+  .progress-bar{
+    position:fixed;top:0;left:0;height:2px;background:var(--signal);
+    box-shadow:0 0 8px var(--signal);z-index:200;width:0%;
+    transition:width .1s linear;
+  }
 
   /* ---------- NAV ---------- */
   header.nav{
@@ -73,9 +105,24 @@
   @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.35}}
   nav.links{display:flex;gap:28px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;}
   nav.links a{color:var(--text-dim);transition:color .2s;position:relative;padding:4px 0;}
+  nav.links a::after{
+    content:'';position:absolute;left:0;bottom:0;width:0;height:1px;background:var(--signal);
+    transition:width .25s;
+  }
   nav.links a:hover{color:var(--signal);}
+  nav.links a:hover::after{width:100%;}
   nav.links a:focus-visible{outline:2px solid var(--signal);outline-offset:4px;}
   @media (max-width:720px){ nav.links{display:none;} }
+
+  /* ---------- SCROLL REVEAL ---------- */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease, transform .7s ease;}
+  .reveal.in{opacity:1;transform:translateY(0);}
+  .reveal-stagger > *{opacity:0;transform:translateY(20px);transition:opacity .6s ease, transform .6s ease;}
+  .reveal-stagger.in > *{opacity:1;transform:translateY(0);}
+  .reveal-stagger.in > *:nth-child(1){transition-delay:.05s;}
+  .reveal-stagger.in > *:nth-child(2){transition-delay:.15s;}
+  .reveal-stagger.in > *:nth-child(3){transition-delay:.25s;}
+  .reveal-stagger.in > *:nth-child(4){transition-delay:.35s;}
 
   /* ---------- HERO ---------- */
   .hero{
@@ -98,11 +145,17 @@
     color:var(--text);
   }
   .hero h1 span{color:var(--signal);}
-  .hero .role{
+  .type-role{
     margin-top:18px;font-size:clamp(16px,2vw,20px);
     color:var(--text-dim);font-weight:500;max-width:640px;
+    min-height:1.6em;
   }
-  .hero .role b{color:var(--text);font-weight:600;}
+  .type-role .cursor{
+    display:inline-block;width:2px;height:1.1em;background:var(--signal);
+    margin-left:2px;vertical-align:text-bottom;
+    animation:blink 1s step-end infinite;
+  }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
   .hero-grid{
     display:grid;grid-template-columns:1.15fr .85fr;gap:56px;
     align-items:center;margin-top:52px;
@@ -117,18 +170,19 @@
     display:inline-flex;align-items:center;gap:8px;transition:all .2s;
   }
   .btn-primary{background:var(--signal);color:#03150f;border-color:var(--signal);font-weight:600;}
-  .btn-primary:hover{background:#04ffb8;}
+  .btn-primary:hover{background:#04ffb8;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,232,160,.25);}
   .btn-ghost{color:var(--text);}
-  .btn-ghost:hover{border-color:var(--signal);color:var(--signal);}
+  .btn-ghost:hover{border-color:var(--signal);color:var(--signal);transform:translateY(-2px);}
 
-  /* photo module with monitor frame + scan sweep */
   .photo-module{
     position:relative;
     border:1px solid var(--line);
     background:var(--surface);
     border-radius:6px;
     padding:14px;
+    transition:transform .3s ease, border-color .3s ease;
   }
+  .photo-module:hover{transform:translateY(-4px);border-color:var(--signal);}
   .photo-frame{
     position:relative;overflow:hidden;border-radius:3px;
     aspect-ratio:1/1.02;
@@ -152,15 +206,18 @@
     padding:10px 4px 2px;letter-spacing:.05em;
   }
   .photo-meta .rec{color:var(--alert);display:flex;align-items:center;gap:5px;}
-  .photo-meta .rec::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--alert);}
+  .photo-meta .rec::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--alert);animation:pulse-dot 1.4s ease-in-out infinite;}
 
-  /* waveform strip */
   .waveform{width:100%;height:64px;display:block;margin-top:56px;}
   .waveform path{
     fill:none;stroke:var(--signal);stroke-width:1.6;
     stroke-linejoin:round;stroke-linecap:round;
     filter:drop-shadow(0 0 5px rgba(0,232,160,.5));
+    stroke-dasharray:2000;
+    stroke-dashoffset:2000;
+    animation:draw-line 2.6s ease-out forwards .3s;
   }
+  @keyframes draw-line{to{stroke-dashoffset:0;}}
 
   /* ---------- SECTION SCAFFOLDING ---------- */
   section{position:relative;z-index:1;padding:74px 0;border-bottom:1px solid var(--line);}
@@ -182,7 +239,8 @@
     display:grid;grid-template-columns:repeat(4,1fr);
     border:1px solid var(--line);border-radius:6px;overflow:hidden;
   }
-  .fact{padding:22px 20px;border-right:1px solid var(--line);}
+  .fact{padding:22px 20px;border-right:1px solid var(--line);transition:background .25s;}
+  .fact:hover{background:var(--surface);}
   .fact:last-child{border-right:none;}
   .fact .k{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);letter-spacing:.08em;text-transform:uppercase;}
   .fact .v{font-size:15px;color:var(--text);margin-top:8px;font-weight:600;}
@@ -205,7 +263,7 @@
     background:var(--bg);border:2px solid var(--signal);
     box-shadow:0 0 0 4px var(--bg);
   }
-  .tl-item.current::before{background:var(--signal);}
+  .tl-item.current::before{background:var(--signal);box-shadow:0 0 0 4px var(--bg), 0 0 12px var(--signal);}
   .tl-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:baseline;}
   .tl-role{font-size:17px;font-weight:700;color:var(--text);}
   .tl-org{color:var(--signal);font-weight:500;font-size:14.5px;}
@@ -217,30 +275,47 @@
   .tl-item li::before{content:'›';position:absolute;left:0;color:var(--text-faint);}
 
   /* ---------- PROJECTS ---------- */
-  .proj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-  @media (max-width:860px){.proj-grid{grid-template-columns:1fr;}}
+  .proj-list{display:flex;flex-direction:column;gap:20px;}
   .proj-card{
-    background:var(--surface);border:1px solid var(--line);border-radius:6px;
-    padding:26px 24px;transition:border-color .25s, transform .25s;
-    display:flex;flex-direction:column;gap:14px;
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:30px 30px;transition:border-color .25s, transform .25s, box-shadow .25s;
+    display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;
   }
-  .proj-card:hover{border-color:var(--signal);transform:translateY(-3px);}
+  .proj-card:hover{border-color:var(--signal);transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,.35);}
+  @media (max-width:780px){ .proj-card{grid-template-columns:1fr;} }
   .proj-tag{
     font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--signal);
     background:var(--signal-dim);display:inline-block;padding:4px 9px;border-radius:3px;
-    width:fit-content;text-transform:uppercase;
+    width:fit-content;text-transform:uppercase;margin-bottom:14px;
   }
-  .proj-card h3{font-size:16.5px;color:var(--text);line-height:1.35;font-weight:700;}
-  .proj-card p{font-size:13.8px;color:var(--text-dim);}
+  .proj-card h3{font-size:19px;color:var(--text);line-height:1.3;font-weight:700;margin-bottom:10px;}
+  .proj-card .proj-date{font-family:var(--mono);font-size:11.5px;color:var(--text-faint);margin-left:10px;font-weight:400;}
+  .proj-card p{font-size:14px;color:var(--text-dim);}
+  .proj-highlights{margin-top:14px;padding-left:0;list-style:none;}
+  .proj-highlights li{
+    color:var(--text-dim);font-size:13.5px;padding-left:18px;position:relative;margin-top:7px;
+  }
+  .proj-highlights li::before{content:'›';position:absolute;left:0;color:var(--signal);}
   .proj-stack{
     font-family:var(--mono);font-size:11px;color:var(--text-faint);
-    padding-top:12px;border-top:1px solid var(--line);margin-top:auto;
+    padding-top:16px;border-top:1px solid var(--line);margin-top:18px;
   }
+  .proj-readouts{
+    display:flex;flex-direction:column;gap:10px;min-width:150px;
+  }
+  .readout{
+    background:var(--surface-2);border:1px solid var(--line);border-radius:6px;
+    padding:12px 14px;text-align:center;
+  }
+  .readout .rk{font-family:var(--mono);font-size:9.5px;color:var(--text-faint);letter-spacing:.06em;text-transform:uppercase;}
+  .readout .rv{font-family:var(--mono);font-size:17px;color:var(--signal);font-weight:700;margin-top:4px;}
+  @media (max-width:780px){ .proj-readouts{flex-direction:row;flex-wrap:wrap;} .readout{flex:1;min-width:120px;} }
 
   /* ---------- SKILLS (instrument channels) ---------- */
   .channels{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
   @media (max-width:720px){.channels{grid-template-columns:1fr;}}
-  .channel{background:var(--surface);padding:22px 24px;}
+  .channel{background:var(--surface);padding:22px 24px;transition:background .25s;}
+  .channel:hover{background:var(--surface-2);}
   .channel .ch-label{
     font-family:var(--mono);font-size:10.5px;color:var(--text-faint);
     letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:8px;
@@ -250,7 +325,9 @@
   .chip{
     font-size:13px;color:var(--text);background:var(--surface-2);
     border:1px solid var(--line);padding:6px 12px;border-radius:20px;
+    transition:border-color .2s, color .2s;
   }
+  .chip:hover{border-color:var(--signal);color:var(--signal);}
 
   /* ---------- EDUCATION ---------- */
   .edu-item{
@@ -281,9 +358,9 @@
   .clink{
     border:1px solid var(--line);border-radius:6px;padding:16px 20px;
     display:flex;flex-direction:column;gap:4px;min-width:200px;flex:1;
-    transition:border-color .2s;
+    transition:border-color .2s, transform .2s;
   }
-  .clink:hover{border-color:var(--signal);}
+  .clink:hover{border-color:var(--signal);transform:translateY(-3px);}
   .clink .k{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);letter-spacing:.08em;text-transform:uppercase;}
   .clink .v{font-size:14.5px;color:var(--text);font-weight:600;}
   .foot-bar{
@@ -293,12 +370,19 @@
   }
 
   @media (prefers-reduced-motion:reduce){
-    .scan-sweep, .nav-id .dot{animation:none;}
+    .scan-sweep, .nav-id .dot, .glow-orb, .type-role .cursor, .photo-meta .rec::before{animation:none;}
+    .waveform path{stroke-dashoffset:0;animation:none;}
+    .reveal, .reveal-stagger > *{opacity:1;transform:none;transition:none;}
     html{scroll-behavior:auto;}
   }
 </style>
 </head>
 <body>
+
+<div class="progress-bar" id="progressBar"></div>
+<canvas id="netCanvas"></canvas>
+<div class="glow-orb"></div>
+<div class="glow-orb-2"></div>
 
 <header class="nav">
   <div class="nav-inner">
@@ -320,10 +404,10 @@
     <h1>Sushant<br>Kumar<span>.</span></h1>
     <div class="hero-grid">
       <div>
-        <p class="role">Reading signals — from <b>ECG traces</b> and <b>MRI scans</b> to <b>thermal imagery</b> — and building the pipelines that make them legible to machines and clinicians alike.</p>
+        <p class="type-role" id="typeRole"><span class="cursor"></span></p>
         <p class="hero-summary" style="margin-top:20px;">Biomedical Engineering graduate currently working as a QA Engineer in the AI Department at IRDE-DRDO, Dehradun, on computer-vision and automated-detection systems. Background spans real-time image processing on embedded hardware, biosensor design, and hands-on calibration of life-critical medical equipment.</p>
         <div class="hero-cta">
-          <a href="Sushant_Kumar_Resume_FINAL.pdf" class="btn btn-primary" download>↓ Download Résumé</a>
+          <a href="Sushant_Kumar_Resume.pdf" class="btn btn-primary" download>↓ Download Résumé</a>
           <a href="#contact" class="btn btn-ghost">Get in touch</a>
           <a href="#projects" class="btn btn-ghost">View projects</a>
         </div>
@@ -341,15 +425,12 @@
     </div>
 
     <svg class="waveform" viewBox="0 0 1000 64" preserveAspectRatio="none">
-      <path id="ekg-path" d="M0,32 L60,32 L90,32 L100,8 L112,58 L124,20 L136,32 L200,32 L260,32 L290,32 L300,10 L312,54 L324,22 L336,32 L400,32 L460,32 L490,32 L500,8 L512,58 L524,20 L536,32 L600,32 L660,32 L690,32 L700,10 L712,54 L724,22 L736,32 L800,32 L860,32 L890,32 L900,8 L912,58 L924,20 L936,32 L1000,32">
-        <animate attributeName="d" dur="0.01s" begin="0s" fill="freeze"
-          values="M0,32 L60,32 L90,32 L100,8 L112,58 L124,20 L136,32 L200,32 L260,32 L290,32 L300,10 L312,54 L324,22 L336,32 L400,32 L460,32 L490,32 L500,8 L512,58 L524,20 L536,32 L600,32 L660,32 L690,32 L700,10 L712,54 L724,22 L736,32 L800,32 L860,32 L890,32 L900,8 L912,58 L924,20 L936,32 L1000,32"/>
-      </path>
+      <path d="M0,32 L60,32 L90,32 L100,8 L112,58 L124,20 L136,32 L200,32 L260,32 L290,32 L300,10 L312,54 L324,22 L336,32 L400,32 L460,32 L490,32 L500,8 L512,58 L524,20 L536,32 L600,32 L660,32 L690,32 L700,10 L712,54 L724,22 L736,32 L800,32 L860,32 L890,32 L900,8 L912,58 L924,20 L936,32 L1000,32"/>
     </svg>
   </section>
 
   <section id="quickfacts" style="padding-top:52px;">
-    <div class="facts">
+    <div class="facts reveal-stagger">
       <div class="fact"><div class="k">Based in</div><div class="v">Dehradun, Uttarakhand</div></div>
       <div class="fact"><div class="k">Current Role</div><div class="v">QA Engineer, AI Dept. — IRDE-DRDO</div></div>
       <div class="fact"><div class="k">Core Stack</div><div class="v">Python · OpenCV · TensorFlow</div></div>
@@ -358,8 +439,8 @@
   </section>
 
   <section id="experience">
-    <div class="sec-head"><span class="sec-tag">02 / LOG</span><h2>Experience</h2></div>
-    <div class="timeline">
+    <div class="sec-head reveal"><span class="sec-tag">02 / LOG</span><h2>Experience</h2></div>
+    <div class="timeline reveal">
       <div class="tl-item current">
         <div class="tl-top">
           <div><span class="tl-role">QA Engineer — AI Department</span><br><span class="tl-org">IRDE-DRDO, Dehradun</span></div>
@@ -376,9 +457,9 @@
           <div class="tl-date">JAN 2025 — FEB 2025</div>
         </div>
         <ul>
-          <li>Built a real-time cancer-cell detection pipeline on Jetson Nano using an IR thermal camera and Python.</li>
-          <li>Applied CLAHE, Gaussian Blur and Laplacian edge detection to sharpen tumour-boundary visibility in thermal and MRI images.</li>
-          <li>Tuned algorithm parameters to improve detection accuracy in field conditions.</li>
+          <li>Built a real-time cancer-cell detection pipeline on Jetson Nano using an IR thermal camera and Python, fusing thermal imaging with MRI scan analysis.</li>
+          <li>Applied CLAHE, Histogram Equalization, Gaussian Blur and Laplacian edge detection to enhance image quality and highlight tumour features.</li>
+          <li>Implemented thresholding and contour detection for real-time tumour segmentation, optimised for low-latency edge inference.</li>
         </ul>
       </div>
       <div class="tl-item">
@@ -395,32 +476,70 @@
   </section>
 
   <section id="projects">
-    <div class="sec-head"><span class="sec-tag">03 / BUILDS</span><h2>Projects</h2></div>
-    <div class="proj-grid">
-      <div class="proj-card">
-        <span class="proj-tag">Imaging</span>
-        <h3>Real-Time Cancer Cell Detection System</h3>
-        <p>An IR-thermal + MRI imaging pipeline that enhances and localises tumour boundaries on-device, running live on Jetson Nano.</p>
-        <div class="proj-stack">Python · OpenCV · CLAHE · Laplacian Edge Detection · Jetson Nano</div>
+    <div class="sec-head reveal"><span class="sec-tag">03 / BUILDS</span><h2>Projects</h2></div>
+    <div class="proj-list">
+
+      <div class="proj-card reveal">
+        <div>
+          <span class="proj-tag">Imaging · Edge AI</span>
+          <h3>Infrared Image Processing &amp; Real-Time Cancer Cell Detection<span class="proj-date">Jan 2025 – Feb 2025</span></h3>
+          <p>Real-time tumour detection system fusing infrared thermal imaging with MRI scan analysis on a GPU-enabled edge platform (Jetson Nano). Built a full pipeline — acquisition, preprocessing, enhancement, segmentation, and visualisation — to flag abnormal tumour regions from temperature variation and structural difference.</p>
+          <ul class="proj-highlights">
+            <li>Enhanced image quality using CLAHE, Histogram Equalization, Gaussian Blur and Laplacian edge detection.</li>
+            <li>Segmented and visualised tumour regions in real-time video via thresholding and contour detection.</li>
+            <li>Optimised for edge deployment, enabling low-latency inference directly on Jetson Nano hardware.</li>
+          </ul>
+          <div class="proj-stack">Python · OpenCV · NVIDIA Jetson Nano · CLAHE · Laplacian Edge Detection</div>
+        </div>
+        <div class="proj-readouts">
+          <div class="readout"><div class="rk">Platform</div><div class="rv">Jetson Nano</div></div>
+          <div class="readout"><div class="rk">Mode</div><div class="rv">Real-Time</div></div>
+        </div>
       </div>
-      <div class="proj-card">
-        <span class="proj-tag">Biosensor</span>
-        <h3>Bio-Sensor for BUN & Creatinine Detection</h3>
-        <p>Fluorescence-based point-of-care sensor using quantum dots conjugated to biomolecules, with lab validation in progress.</p>
-        <div class="proj-stack">Quantum Dots · Fluorescence Spectroscopy · Point-of-Care</div>
+
+      <div class="proj-card reveal">
+        <div>
+          <span class="proj-tag">Biosensor · Point-of-Care</span>
+          <h3>Optical Biosensor for Creatinine Detection<span class="proj-date">2025</span></h3>
+          <p>Portable optical biosensor for real-time creatinine detection, integrating quantum-dot nanotechnology with an embedded readout system. CdS/ZnS quantum dots conjugated with creatinine deiminase detect creatinine via fluorescence enhancement, read out on a custom Arduino-based device.</p>
+          <ul class="proj-highlights">
+            <li>Fabricated a working device using Arduino Uno, AS7341 spectral sensor, UV excitation source and LCD readout.</li>
+            <li>Ran full pipeline: quantum dot synthesis, characterisation (UV-Vis, PL, FTIR, XRD), EDC/NHS enzyme conjugation, calibration and validation.</li>
+            <li>Demonstrated a low-cost, portable point-of-care solution for kidney-disease monitoring.</li>
+          </ul>
+          <div class="proj-stack">Quantum Dots (CdS/ZnS) · Arduino Uno · AS7341 Spectral Sensor · Fluorescence Spectroscopy</div>
+        </div>
+        <div class="proj-readouts">
+          <div class="readout"><div class="rk">Range</div><div class="rv">0–1.5 mg/dL</div></div>
+          <div class="readout"><div class="rk">Linearity R²</div><div class="rv">0.9567</div></div>
+          <div class="readout"><div class="rk">Zeta Potential</div><div class="rv">≈ −28 mV</div></div>
+        </div>
       </div>
-      <div class="proj-card">
-        <span class="proj-tag">Device</span>
-        <h3>Anchoring Mechanism for TMVR Device</h3>
-        <p>A CAD-designed anchoring mechanism for a Transcatheter Mitral Valve Replacement device, grounded in cardiac-function study.</p>
-        <div class="proj-stack">Biomedical Design · CAD · IPR</div>
+
+      <div class="proj-card reveal">
+        <div>
+          <span class="proj-tag">Biomedical Device</span>
+          <h3>Anchoring Mechanism for Transcatheter Mitral Valve Replacement</h3>
+          <p>Designed a novel dual-anchorage mechanism for TMVR, targeting the major failure modes of existing systems — paravalvular leakage (PVL), LVOT obstruction, and device displacement — for safer minimally-invasive cardiac procedures.</p>
+          <ul class="proj-highlights">
+            <li>LA Anchor: collapsible double bifilar helix in Nitinol for adaptive stability in the left atrium.</li>
+            <li>LV Anchor: disc-based support structure preventing migration and ensuring correct positioning.</li>
+            <li>Fully catheter-deliverable, recapturable and repositionable for minimally-invasive deployment.</li>
+          </ul>
+          <div class="proj-stack">Nitinol Alloy · Biomedical Design · CAD · Cardiovascular Systems</div>
+        </div>
+        <div class="proj-readouts">
+          <div class="readout"><div class="rk">Material</div><div class="rv">Nitinol</div></div>
+          <div class="readout"><div class="rk">Anchors</div><div class="rv">Dual</div></div>
+        </div>
       </div>
+
     </div>
   </section>
 
   <section id="skills">
-    <div class="sec-head"><span class="sec-tag">04 / PANEL</span><h2>Skills</h2></div>
-    <div class="channels">
+    <div class="sec-head reveal"><span class="sec-tag">04 / PANEL</span><h2>Skills</h2></div>
+    <div class="channels reveal">
       <div class="channel">
         <div class="ch-label">Programming</div>
         <div class="chips"><span class="chip">Python</span><span class="chip">C</span><span class="chip">C++</span><span class="chip">MATLAB</span></div>
@@ -431,38 +550,44 @@
       </div>
       <div class="channel">
         <div class="ch-label">Embedded Systems</div>
-        <div class="chips"><span class="chip">Jetson Nano</span><span class="chip">Autodesk Fusion 360</span><span class="chip">3D Printing</span></div>
+        <div class="chips"><span class="chip">Jetson Nano</span><span class="chip">Arduino Uno</span><span class="chip">Autodesk Fusion 360</span><span class="chip">3D Printing</span></div>
       </div>
       <div class="channel">
         <div class="ch-label">Medical Devices</div>
         <div class="chips"><span class="chip">ECG</span><span class="chip">Defibrillator</span><span class="chip">ICU Ventilator</span><span class="chip">Multiparameter Monitor</span></div>
       </div>
+      <div class="channel">
+        <div class="ch-label">Computer Vision</div>
+        <div class="chips"><span class="chip">Image Segmentation</span><span class="chip">Edge Detection</span><span class="chip">Thermal &amp; MRI Fusion</span><span class="chip">CLAHE</span><span class="chip">Contour Detection</span><span class="chip">Real-Time Inference</span></div>
+      </div>
       <div class="channel" style="grid-column:1/-1;">
         <div class="ch-label">Domain Expertise</div>
-        <div class="chips"><span class="chip">Signal Processing</span><span class="chip">MRI</span><span class="chip">Sensors &amp; Transducers</span><span class="chip">Bioelectronics</span><span class="chip">QA &amp; Testing</span><span class="chip">Calibration</span></div>
+        <div class="chips"><span class="chip">Signal Processing</span><span class="chip">MRI</span><span class="chip">Sensors &amp; Transducers</span><span class="chip">Bioelectronics</span><span class="chip">QA &amp; Testing</span><span class="chip">Calibration</span><span class="chip">Fluorescence Spectroscopy</span><span class="chip">Edge AI Deployment</span></div>
       </div>
     </div>
   </section>
 
   <section id="education">
-    <div class="sec-head"><span class="sec-tag">05 / RECORD</span><h2>Education</h2></div>
-    <div class="edu-item">
-      <div><div class="e-name">B.Tech in Biomedical Engineering</div><div class="e-org">North Eastern Hill University, Shillong, Meghalaya</div></div>
-      <div class="e-meta">2021 – 2025<br>CGPA 6.59/10</div>
-    </div>
-    <div class="edu-item">
-      <div><div class="e-name">Higher Secondary (PCM)</div><div class="e-org">Langat Singh College, Muzaffarpur, Bihar</div></div>
-      <div class="e-meta">2020 · 61.4%</div>
-    </div>
-    <div class="edu-item">
-      <div><div class="e-name">Secondary</div><div class="e-org">Shree Baldev High School, Bihar</div></div>
-      <div class="e-meta">2018 · 53.8%</div>
+    <div class="sec-head reveal"><span class="sec-tag">05 / RECORD</span><h2>Education</h2></div>
+    <div class="reveal">
+      <div class="edu-item">
+        <div><div class="e-name">B.Tech in Biomedical Engineering</div><div class="e-org">North Eastern Hill University, Shillong, Meghalaya</div></div>
+        <div class="e-meta">2021 – 2025<br>CGPA 6.59/10</div>
+      </div>
+      <div class="edu-item">
+        <div><div class="e-name">Higher Secondary (PCM)</div><div class="e-org">Langat Singh College, Muzaffarpur, Bihar</div></div>
+        <div class="e-meta">2020 · 61.4%</div>
+      </div>
+      <div class="edu-item">
+        <div><div class="e-name">Secondary</div><div class="e-org">Shree Baldev High School, Bihar</div></div>
+        <div class="e-meta">2018 · 53.8%</div>
+      </div>
     </div>
   </section>
 
   <section id="achievements">
-    <div class="sec-head"><span class="sec-tag">06 / MARKERS</span><h2>Achievements &amp; Certifications</h2></div>
-    <ul class="ach-list">
+    <div class="sec-head reveal"><span class="sec-tag">06 / MARKERS</span><h2>Achievements &amp; Certifications</h2></div>
+    <ul class="ach-list reveal">
       <li>2nd Position — Biocraft Competition, IIT Kharagpur</li>
       <li>Satellite Communication &amp; Navigation Training — NESAC, Dept. of Space (2024)</li>
       <li>Yuvamanthan Model United Nations — Delegate (2024)</li>
@@ -472,21 +597,127 @@
   </section>
 
   <footer id="contact">
-    <div class="contact-head">06 / Get in touch</div>
-    <h2>Open to roles in AI-driven medical imaging, computer vision and biomedical R&amp;D.</h2>
-    <div class="contact-links">
+    <div class="contact-head reveal">07 / Get in touch</div>
+    <h2 class="reveal">Currently working at the intersection of AI and biomedical engineering — always glad to talk computer vision, diagnostic imaging, or where the two collide. Reach out below.</h2>
+    <div class="contact-links reveal-stagger">
       <a class="clink" href="mailto:Sushant9663@gmail.com"><span class="k">Email</span><span class="v">Sushant9663@gmail.com</span></a>
       <a class="clink" href="tel:+919667386944"><span class="k">Phone</span><span class="v">+91 96673 86944</span></a>
-      <a class="clink" href="#"><span class="k">LinkedIn</span><span class="v">Add your profile URL →</span></a>
-      <a class="clink" href="#"><span class="k">GitHub</span><span class="v">Add your profile URL →</span></a>
+      <a class="clink" href="https://www.linkedin.com/in/sushant-kumar-287901246/" target="_blank" rel="noopener"><span class="k">Connect</span><span class="v">LinkedIn →</span></a>
+      <a class="clink" href="https://github.com/sushant9663" target="_blank" rel="noopener"><span class="k">Explore</span><span class="v">GitHub →</span></a>
     </div>
     <div class="foot-bar">
       <span>© 2026 Sushant Kumar</span>
-      <span>Dehradun, Uttarakhand, INDIA</span>
+      <span>Dehradun, Uttarakhand, IN</span>
     </div>
   </footer>
 
 </div>
+
+<script>
+  // background neural / signal network animation
+  (function(){
+    const canvas = document.getElementById('netCanvas');
+    const ctx = canvas.getContext('2d');
+    let w, h, nodes;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function resize(){
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = document.documentElement.scrollHeight;
+    }
+    function initNodes(){
+      const count = Math.min(60, Math.floor((w*h)/45000));
+      nodes = Array.from({length:count}, () => ({
+        x: Math.random()*w,
+        y: Math.random()*h,
+        vx: (Math.random()-0.5)*0.25,
+        vy: (Math.random()-0.5)*0.25
+      }));
+    }
+    function step(){
+      ctx.clearRect(0,0,w,h);
+      const scrollY = window.scrollY;
+      const viewTop = scrollY - 200;
+      const viewBottom = scrollY + window.innerHeight + 200;
+
+      nodes.forEach(n=>{
+        n.x += n.vx; n.y += n.vy;
+        if(n.x < 0 || n.x > w) n.vx *= -1;
+        if(n.y < 0 || n.y > h) n.vy *= -1;
+      });
+
+      for(let i=0;i<nodes.length;i++){
+        const a = nodes[i];
+        if(a.y < viewTop || a.y > viewBottom) continue;
+        for(let j=i+1;j<nodes.length;j++){
+          const b = nodes[j];
+          const dx = a.x-b.x, dy = a.y-b.y;
+          const dist = Math.sqrt(dx*dx+dy*dy);
+          if(dist < 130){
+            ctx.strokeStyle = `rgba(0,232,160,${(1-dist/130)*0.16})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+            ctx.stroke();
+          }
+        }
+        ctx.fillStyle = 'rgba(0,232,160,0.45)';
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, 1.6, 0, Math.PI*2);
+        ctx.fill();
+      }
+      if(!reduceMotion) requestAnimationFrame(step);
+    }
+
+    resize(); initNodes();
+    if(!reduceMotion){ requestAnimationFrame(step); }
+    else { step(); }
+    window.addEventListener('resize', ()=>{ resize(); initNodes(); });
+    let resizeTimer;
+    window.addEventListener('load', ()=>{ resize(); initNodes(); });
+  })();
+
+  // progress bar
+  const bar = document.getElementById('progressBar');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+    bar.style.width = scrolled + '%';
+  });
+
+  // typing effect
+  const roles = [
+    'Biomedical Engineer building AI-driven diagnostic systems.',
+    'Reading ECG traces, MRI scans, and thermal imagery.',
+    'Turning signals into pipelines machines can act on.'
+  ];
+  const typeEl = document.getElementById('typeRole');
+  const cursor = typeEl.querySelector('.cursor');
+  let ri = 0, ci = 0, deleting = false;
+  function typeLoop(){
+    const current = roles[ri];
+    if(!deleting){
+      ci++;
+      typeEl.textContent = current.slice(0, ci);
+      typeEl.appendChild(cursor);
+      if(ci === current.length){ deleting = true; setTimeout(typeLoop, 1600); return; }
+      setTimeout(typeLoop, 38);
+    } else {
+      ci--;
+      typeEl.textContent = current.slice(0, ci);
+      typeEl.appendChild(cursor);
+      if(ci === 0){ deleting = false; ri = (ri+1) % roles.length; setTimeout(typeLoop, 300); return; }
+      setTimeout(typeLoop, 18);
+    }
+  }
+  typeLoop();
+
+  // scroll reveal
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => io.observe(el));
+</script>
 
 </body>
 </html>
