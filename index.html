@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sushant Kumar — Biomedical Engineer × AI / Computer Vision</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0a0f14;
@@ -16,10 +16,11 @@
     --text:#e7ecf1;
     --text-dim:#8fa0ae;
     --text-faint:#5c6c78;
-    --signal:#00e8a0;
-    --signal-dim:#0a4a3c;
-    --alert:#ff7a59;
+    --signal:#00d8ff;
+    --signal-dim:#0a2a3d;
+    --alert:#b06bff;
     --mono:'JetBrains Mono', ui-monospace, monospace;
+    --display:'Space Grotesk', var(--mono);
     --sans:'Inter', -apple-system, sans-serif;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -49,13 +50,13 @@
   /* subtle roaming glow */
   .glow-orb{
     position:fixed;width:520px;height:520px;border-radius:50%;
-    background:radial-gradient(circle, rgba(0,232,160,.10), transparent 70%);
+    background:radial-gradient(circle, rgba(0,216,255,.10), transparent 70%);
     top:-160px;right:-160px;pointer-events:none;z-index:0;
     animation:drift 18s ease-in-out infinite;
   }
   .glow-orb-2{
     position:fixed;width:420px;height:420px;border-radius:50%;
-    background:radial-gradient(circle, rgba(255,122,89,.06), transparent 70%);
+    background:radial-gradient(circle, rgba(176,107,255,.09), transparent 70%);
     bottom:-140px;left:-120px;pointer-events:none;z-index:0;
     animation:drift2 22s ease-in-out infinite;
   }
@@ -69,7 +70,7 @@
   }
   #netCanvas{
     position:fixed;inset:0;width:100%;height:100%;
-    pointer-events:none;z-index:0;opacity:.35;
+    pointer-events:none;z-index:0;opacity:.55;
   }
 
   .wrap{max-width:1080px;margin:0 auto;padding:0 32px;}
@@ -137,10 +138,10 @@
   }
   .lead-label::before{content:'';width:26px;height:1px;background:var(--signal);}
   .hero h1{
-    font-family:var(--mono);
+    font-family:var(--display);
     font-size:clamp(38px,6.2vw,74px);
     font-weight:700;
-    letter-spacing:-.01em;
+    letter-spacing:-.02em;
     line-height:1.04;
     color:var(--text);
   }
@@ -170,7 +171,7 @@
     display:inline-flex;align-items:center;gap:8px;transition:all .2s;
   }
   .btn-primary{background:var(--signal);color:#03150f;border-color:var(--signal);font-weight:600;}
-  .btn-primary:hover{background:#04ffb8;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,232,160,.25);}
+  .btn-primary:hover{background:#4de8ff;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,216,255,.25);}
   .btn-ghost{color:var(--text);}
   .btn-ghost:hover{border-color:var(--signal);color:var(--signal);transform:translateY(-2px);}
 
@@ -195,7 +196,7 @@
   }
   .scan-sweep{
     position:absolute;left:0;right:0;height:26%;
-    background:linear-gradient(180deg, transparent, rgba(0,232,160,.18), transparent);
+    background:linear-gradient(180deg, transparent, rgba(0,216,255,.18), transparent);
     animation:sweep 4.5s linear infinite;
     pointer-events:none;
   }
@@ -212,7 +213,7 @@
   .waveform path{
     fill:none;stroke:var(--signal);stroke-width:1.6;
     stroke-linejoin:round;stroke-linecap:round;
-    filter:drop-shadow(0 0 5px rgba(0,232,160,.5));
+    filter:drop-shadow(0 0 5px rgba(0,216,255,.5));
     stroke-dasharray:2000;
     stroke-dashoffset:2000;
     animation:draw-line 2.6s ease-out forwards .3s;
@@ -400,7 +401,7 @@
 <div class="wrap">
 
   <section class="hero" id="about">
-    <div class="lead-label">Biomedical Engineer — AI / Computer Vision</div>
+    <div class="lead-label">AI × Biomedical Engineering | Computer Vision | Medical Imaging</div>
     <h1>Sushant<br>Kumar<span>.</span></h1>
     <div class="hero-grid">
       <div>
@@ -558,7 +559,7 @@
       </div>
       <div class="channel">
         <div class="ch-label">Computer Vision</div>
-        <div class="chips"><span class="chip">Image Segmentation</span><span class="chip">Edge Detection</span><span class="chip">Thermal &amp; MRI Fusion</span><span class="chip">CLAHE</span><span class="chip">Contour Detection</span><span class="chip">Real-Time Inference</span></div>
+        <div class="chips"><span class="chip">Object Detection — Thermal &amp; RGB</span><span class="chip">Image Segmentation</span><span class="chip">Edge Detection</span><span class="chip">Thermal &amp; MRI Fusion</span><span class="chip">CLAHE</span><span class="chip">Contour Detection</span><span class="chip">Real-Time Inference</span></div>
       </div>
       <div class="channel" style="grid-column:1/-1;">
         <div class="ch-label">Domain Expertise</div>
@@ -614,67 +615,115 @@
 </div>
 
 <script>
-  // background neural / signal network animation
+  // background AI / computer-vision detection-scan animation
   (function(){
     const canvas = document.getElementById('netCanvas');
     const ctx = canvas.getContext('2d');
-    let w, h, nodes;
+    let w, h, boxes = [], particles = [];
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const labels = ['TISSUE 0.9', 'ROI 0.87', 'TARGET 0.93', 'SIGNAL 0.81', 'REGION 0.89', 'SCAN 0.95', 'NODE 0.84', 'FEATURE 0.91'];
 
     function resize(){
       w = canvas.width = window.innerWidth;
       h = canvas.height = document.documentElement.scrollHeight;
     }
-    function initNodes(){
-      const count = Math.min(60, Math.floor((w*h)/45000));
-      nodes = Array.from({length:count}, () => ({
-        x: Math.random()*w,
-        y: Math.random()*h,
-        vx: (Math.random()-0.5)*0.25,
-        vy: (Math.random()-0.5)*0.25
+    function initParticles(){
+      const count = Math.min(50, Math.floor((w*h)/55000));
+      particles = Array.from({length:count}, () => ({
+        x: Math.random()*w, y: Math.random()*h,
+        vx: (Math.random()-0.5)*0.22, vy: (Math.random()-0.5)*0.22
       }));
+    }
+    function spawnBox(){
+      const viewTop = window.scrollY - 100;
+      const viewH = window.innerHeight + 200;
+      const bw = 90 + Math.random()*130;
+      const bh = 60 + Math.random()*90;
+      boxes.push({
+        x: Math.random()*(w-bw),
+        y: viewTop + Math.random()*viewH,
+        w: bw, h: bh,
+        life: 0,
+        maxLife: 180 + Math.random()*90,
+        label: labels[Math.floor(Math.random()*labels.length)],
+        hue: Math.random() > 0.35 ? '0,216,255' : '176,107,255'
+      });
+    }
+    function drawCorner(x,y,w,h,len,alpha,hue){
+      ctx.strokeStyle = `rgba(${hue},${alpha})`;
+      ctx.lineWidth = 1.4;
+      const corners = [
+        [[x,y+len],[x,y],[x+len,y]],
+        [[x+w-len,y],[x+w,y],[x+w,y+len]],
+        [[x+w,y+h-len],[x+w,y+h],[x+w-len,y+h]],
+        [[x+len,y+h],[x,y+h],[x,y+h-len]]
+      ];
+      corners.forEach(pts=>{
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0],pts[0][1]);
+        ctx.lineTo(pts[1][0],pts[1][1]);
+        ctx.lineTo(pts[2][0],pts[2][1]);
+        ctx.stroke();
+      });
     }
     function step(){
       ctx.clearRect(0,0,w,h);
-      const scrollY = window.scrollY;
-      const viewTop = scrollY - 200;
-      const viewBottom = scrollY + window.innerHeight + 200;
+      const viewTop = window.scrollY - 200;
+      const viewBottom = window.scrollY + window.innerHeight + 200;
 
-      nodes.forEach(n=>{
-        n.x += n.vx; n.y += n.vy;
-        if(n.x < 0 || n.x > w) n.vx *= -1;
-        if(n.y < 0 || n.y > h) n.vy *= -1;
+      // drifting particles + connecting lines (neural net feel)
+      particles.forEach(p=>{
+        p.x += p.vx; p.y += p.vy;
+        if(p.x<0||p.x>w) p.vx*=-1;
+        if(p.y<0||p.y>h) p.vy*=-1;
       });
-
-      for(let i=0;i<nodes.length;i++){
-        const a = nodes[i];
-        if(a.y < viewTop || a.y > viewBottom) continue;
-        for(let j=i+1;j<nodes.length;j++){
-          const b = nodes[j];
-          const dx = a.x-b.x, dy = a.y-b.y;
-          const dist = Math.sqrt(dx*dx+dy*dy);
-          if(dist < 130){
-            ctx.strokeStyle = `rgba(0,232,160,${(1-dist/130)*0.16})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
-            ctx.stroke();
+      for(let i=0;i<particles.length;i++){
+        const a = particles[i];
+        if(a.y<viewTop||a.y>viewBottom) continue;
+        for(let j=i+1;j<particles.length;j++){
+          const b = particles[j];
+          const dx=a.x-b.x, dy=a.y-b.y;
+          const dist=Math.sqrt(dx*dx+dy*dy);
+          if(dist<120){
+            ctx.strokeStyle = `rgba(0,216,255,${(1-dist/120)*0.10})`;
+            ctx.lineWidth=1;
+            ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
           }
         }
-        ctx.fillStyle = 'rgba(0,232,160,0.45)';
-        ctx.beginPath();
-        ctx.arc(a.x, a.y, 1.6, 0, Math.PI*2);
-        ctx.fill();
+        ctx.fillStyle='rgba(0,216,255,0.35)';
+        ctx.beginPath(); ctx.arc(a.x,a.y,1.4,0,Math.PI*2); ctx.fill();
       }
+
+      // detection bounding boxes: fade in, hold, fade out
+      boxes.forEach(b=>{
+        b.life++;
+        let alpha;
+        const fadeIn = 25, fadeOut = 40;
+        if(b.life < fadeIn) alpha = (b.life/fadeIn) * 0.55;
+        else if(b.life > b.maxLife - fadeOut) alpha = ((b.maxLife-b.life)/fadeOut) * 0.55;
+        else alpha = 0.55;
+        alpha = Math.max(0, alpha);
+        if(b.y+b.h < viewTop || b.y > viewBottom) return;
+
+        drawCorner(b.x, b.y, b.w, b.h, 14, alpha, b.hue);
+        if(alpha > 0.25){
+          ctx.font = "10px 'JetBrains Mono', monospace";
+          ctx.fillStyle = `rgba(${b.hue},${alpha})`;
+          ctx.fillText(b.label, b.x, b.y - 6);
+        }
+      });
+      boxes = boxes.filter(b => b.life < b.maxLife);
+      if(boxes.length < 5 && Math.random() < 0.02) spawnBox();
+
       if(!reduceMotion) requestAnimationFrame(step);
     }
 
-    resize(); initNodes();
+    resize(); initParticles();
+    for(let i=0;i<3;i++) spawnBox();
     if(!reduceMotion){ requestAnimationFrame(step); }
     else { step(); }
-    window.addEventListener('resize', ()=>{ resize(); initNodes(); });
-    let resizeTimer;
-    window.addEventListener('load', ()=>{ resize(); initNodes(); });
+    window.addEventListener('resize', ()=>{ resize(); initParticles(); });
+    window.addEventListener('load', ()=>{ resize(); initParticles(); });
   })();
 
   // progress bar
@@ -687,8 +736,9 @@
 
   // typing effect
   const roles = [
-    'Biomedical Engineer building AI-driven diagnostic systems.',
+    'AI/ML · Computer Vision · Biomedical Engineer.',
     'Reading ECG traces, MRI scans, and thermal imagery.',
+    'Object detection across thermal and RGB datasets.',
     'Turning signals into pipelines machines can act on.'
   ];
   const typeEl = document.getElementById('typeRole');
