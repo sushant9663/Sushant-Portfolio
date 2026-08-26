@@ -392,6 +392,7 @@
       <a href="#about">SUMMARY</a>
       <a href="#experience">EXPERIENCE</a>
       <a href="#projects">PROJECTS</a>
+      <a href="#domains">DOMAINS</a>
       <a href="#skills">SKILLS</a>
       <a href="#contact">CONTACT</a>
     </nav>
@@ -538,6 +539,21 @@
     </div>
   </section>
 
+  <section id="domains">
+    <div class="sec-head reveal"><span class="sec-tag">03B / APPLIED ACROSS</span><h2>Detection Across Domains</h2></div>
+    <p class="reveal" style="color:var(--text-dim);font-size:14.5px;max-width:680px;margin-bottom:32px;">The same underlying pipeline — image enhancement, segmentation, and object/region detection — transfers across very different feeds. At IRDE-DRDO, that means working with computer-vision detection systems built for both diagnostic imaging and defense electro-optical applications.</p>
+    <div class="channels reveal">
+      <div class="channel">
+        <div class="ch-label">Medical Imaging</div>
+        <div class="chips"><span class="chip">Tumour / ROI Detection</span><span class="chip">Thermal + MRI Fusion</span><span class="chip">CLAHE Enhancement</span><span class="chip">Contour Segmentation</span></div>
+      </div>
+      <div class="channel">
+        <div class="ch-label">Defense &amp; Surveillance (IRDE-DRDO)</div>
+        <div class="chips"><span class="chip">Automated Target Detection</span><span class="chip">Thermal &amp; RGB Feeds</span><span class="chip">Real-Time Edge Inference</span><span class="chip">QA &amp; Output Verification</span></div>
+      </div>
+    </div>
+  </section>
+
   <section id="skills">
     <div class="sec-head reveal"><span class="sec-tag">04 / PANEL</span><h2>Skills</h2></div>
     <div class="channels reveal">
@@ -621,7 +637,8 @@
     const ctx = canvas.getContext('2d');
     let w, h, boxes = [], particles = [];
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const labels = ['TISSUE 0.9', 'ROI 0.87', 'TARGET 0.93', 'SIGNAL 0.81', 'REGION 0.89', 'SCAN 0.95', 'NODE 0.84', 'FEATURE 0.91'];
+    const medLabels = ['TISSUE 0.90', 'ROI 0.87', 'THERMAL 0.91', 'SCAN 0.95', 'FEATURE 0.91'];
+    const defLabels = ['TARGET 0.93', 'TRACK 0.88', 'OBJ-LOCK 0.84', 'LOCKED 0.90'];
 
     function resize(){
       w = canvas.width = window.innerWidth;
@@ -637,6 +654,7 @@
     function spawnBox(){
       const viewTop = window.scrollY - 100;
       const viewH = window.innerHeight + 200;
+      const isDefense = Math.random() > 0.5;
       const bw = 90 + Math.random()*130;
       const bh = 60 + Math.random()*90;
       boxes.push({
@@ -645,10 +663,14 @@
         w: bw, h: bh,
         life: 0,
         maxLife: 180 + Math.random()*90,
-        label: labels[Math.floor(Math.random()*labels.length)],
-        hue: Math.random() > 0.35 ? '0,216,255' : '176,107,255'
+        type: isDefense ? 'defense' : 'medical',
+        label: isDefense
+          ? defLabels[Math.floor(Math.random()*defLabels.length)]
+          : medLabels[Math.floor(Math.random()*medLabels.length)],
+        hue: isDefense ? '176,107,255' : '0,216,255'
       });
     }
+    // format 1 — medical: corner-bracket scan frame
     function drawCorner(x,y,w,h,len,alpha,hue){
       ctx.strokeStyle = `rgba(${hue},${alpha})`;
       ctx.lineWidth = 1.4;
@@ -665,6 +687,34 @@
         ctx.lineTo(pts[2][0],pts[2][1]);
         ctx.stroke();
       });
+      // faint horizontal scan line sweeping inside the frame
+      const sweepY = y + ((Date.now()/900) % 1) * h;
+      ctx.strokeStyle = `rgba(${hue},${alpha*0.5})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x+3, sweepY); ctx.lineTo(x+w-3, sweepY); ctx.stroke();
+    }
+    // format 2 — defense: circular target-lock reticle with crosshair
+    function drawReticle(x,y,w,h,alpha,hue){
+      const cx = x + w/2, cy = y + h/2;
+      const r = Math.min(w,h)/2 * 0.8;
+      ctx.strokeStyle = `rgba(${hue},${alpha})`;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx,cy,r*0.55,0,Math.PI*2); ctx.stroke();
+      // crosshair ticks
+      const tick = r*0.35;
+      ctx.beginPath();
+      ctx.moveTo(cx-r-tick, cy); ctx.lineTo(cx-r+tick*0.4, cy);
+      ctx.moveTo(cx+r-tick*0.4, cy); ctx.lineTo(cx+r+tick, cy);
+      ctx.moveTo(cx, cy-r-tick); ctx.lineTo(cx, cy-r+tick*0.4);
+      ctx.moveTo(cx, cy+r-tick*0.4); ctx.lineTo(cx, cy+r+tick);
+      ctx.stroke();
+      // slow rotating tick on the outer ring
+      const ang = (Date.now()/1400) % (Math.PI*2);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(ang)*r*0.85, cy + Math.sin(ang)*r*0.85);
+      ctx.lineTo(cx + Math.cos(ang)*r*1.12, cy + Math.sin(ang)*r*1.12);
+      ctx.stroke();
     }
     function step(){
       ctx.clearRect(0,0,w,h);
@@ -694,7 +744,7 @@
         ctx.beginPath(); ctx.arc(a.x,a.y,1.4,0,Math.PI*2); ctx.fill();
       }
 
-      // detection bounding boxes: fade in, hold, fade out
+      // detection overlays: fade in, hold, fade out — two visual formats
       boxes.forEach(b=>{
         b.life++;
         let alpha;
@@ -705,7 +755,11 @@
         alpha = Math.max(0, alpha);
         if(b.y+b.h < viewTop || b.y > viewBottom) return;
 
-        drawCorner(b.x, b.y, b.w, b.h, 14, alpha, b.hue);
+        if(b.type === 'medical'){
+          drawCorner(b.x, b.y, b.w, b.h, 14, alpha, b.hue);
+        } else {
+          drawReticle(b.x, b.y, b.w, b.h, alpha, b.hue);
+        }
         if(alpha > 0.25){
           ctx.font = "10px 'JetBrains Mono', monospace";
           ctx.fillStyle = `rgba(${b.hue},${alpha})`;
@@ -713,7 +767,7 @@
         }
       });
       boxes = boxes.filter(b => b.life < b.maxLife);
-      if(boxes.length < 5 && Math.random() < 0.02) spawnBox();
+      if(boxes.length < 6 && Math.random() < 0.02) spawnBox();
 
       if(!reduceMotion) requestAnimationFrame(step);
     }
