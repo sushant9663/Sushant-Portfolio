@@ -17,11 +17,3 @@ const observer = new IntersectionObserver((entries) => {
 
 document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
 
-const form = document.getElementById("contactForm");
-const status = document.getElementById("formStatus");
-
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
-  status.textContent = "Thanks! Your message has been captured in this demo. Connect a form backend to receive submissions.";
-  form.reset();
-});

@@ -13,4 +13,4 @@
 - `assets/resume.pdf` — resume
 
 ## Contact form
-The form is currently front-end only. It validates the fields and shows a success message locally. To actually receive messages, connect it to a form service or your own backend later.
+The form submits visitor details to `sushant9663@gmail.com` through FormSubmit. On the first submission, FormSubmit may send a one-time activation email to confirm the receiving address.
